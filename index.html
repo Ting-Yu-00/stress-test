@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>照顧者壓力自我測驗</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px auto;
+            max-width: 700px;
+            line-height: 1.6;
+        }
+        .question {
+            margin-bottom: 15px;
+        }
+        label {
+            font-weight: bold;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #f0f8ff;
+            border: 1px solid #b0e0e6;
+        }
+    </style>
+</head>
+<body>
+
+<h2>照顧者壓力自我測驗</h2>
+<p>
+照顧早產寶寶的您，真的辛苦了！透過這份簡短的照顧者壓力評估量表，您可以快速檢視自己的身心狀態，了解是否需要進一步的協助與支持。請給自己三分鐘的時間，提醒自己：在照顧寶寶的同時，也別忘了好好照顧自己🧡
+</p>
+<p>
+📌 小提醒：本測驗參考自「中華民國家庭照顧者關懷總會」所發展的家庭照顧者壓力量表，測驗結果僅供您與醫療團隊參考。若分數達到建議介入的標準，醫療團隊將主動與您聯繫並提供後續的關懷與追蹤。所有資料將定期刪除，請放心填寫。
+</p>
+
+<form id="stressForm">
+    <div class="question">
+        <label>1. 請問您的名字？</label><br>
+        <input type="text" name="userName" required>
+    </div>
+    <div class="question">
+        <label>2. 請問您是寶寶的？</label><br>
+        <select name="relation" required>
+            <option value="">請選擇</option>
+            <option value="爸爸">爸爸</option>
+            <option value="媽媽">媽媽</option>
+        </select>
+    </div>
+    <div class="question">
+        <label>3. 請問您的年齡？</label><br>
+        <input type="number" name="age" required>
+    </div>
+
+    <hr>
+
+    <div id="questions"></div>
+
+    <button type="button" onclick="calculateScore()">提交測驗</button>
+</form>
+
+<div id="result"></div>
+
+<script>
+const questions = [
+    "您覺得身體不舒服不爽快時還是要照顧他",
+    "感到疲倦",
+    "體力上負擔重",
+    "我會受到他的情緒影響",
+    "睡眠被干擾，因為他在夜裡無法安睡",
+    "因為照顧他，讓您的健康變壞了",
+    "感到心力交瘁",
+    "照顧他讓您精神上覺得痛苦",
+    "當您和他在一起時，會感到生氣",
+    "因為照顧他，影響到您原先的旅行計畫",
+    "與親朋好友交往受影響",
+    "您必須時時刻刻都要注意他",
+    "照顧他的花費大，造成負擔",
+    "不能外出工作家庭收入受影響"
+];
+
+const options = ["請選擇","從來沒有（0分）", "很少如此（1分）", "有時如此（2分）", "常常如此（3分）"];
+
+const questionsDiv = document.getElementById('questions');
+questions.forEach((q, i) => {
+    let html = `<div class="question"><label>${i+1}. ${q}</label><br><select name="q${i+1}" required>`;
+    options.forEach((opt, idx) => {
+        html += `<option value="${idx-1}">${opt}</option>`;
+    });
+    html += `</select></div>`;
+    questionsDiv.innerHTML += html;
+});
+
+function calculateScore(){
+    const form = document.getElementById('stressForm');
+    let totalScore = 0;
+
+    for(let i=1; i<=questions.length; i++){
+        const val = parseInt(form[`q${i}`].value);
+        if(val < 0 || isNaN(val)){
+            alert("請完成所有問題再提交！");
+            return;
+        }
+        totalScore += val;
+    }
+
+    let feedback = "";
+    if(totalScore <= 13){
+        feedback = "您調適得非常好，真的辛苦了！照顧寶寶是一趟漫長的旅程，別忘了隨時停下來喘口氣，適時犒賞自己，繼續加油🧡";
+    } else if(totalScore <= 25){
+        feedback = "您已經開始感受到一些壓力，這都是很正常的，並不代表您不夠好。建議您適時向醫療團隊或社會資源求助，給自己一點休息與喘息的空間。您不是一個人，別害怕開口尋求幫助🧡";
+    } else {
+        feedback = "您目前正承受著相當沉重的壓力，真的辛苦您了！我們強烈建議您盡快聯繫家人、朋友，或醫療與社會資源，主動告訴他們您的困難與需求。請記得，唯有照顧好自己，才能更好地陪伴寶寶一起成長，您值得更多支持與關懷🧡";
+    }
+
+    document.getElementById('result').innerHTML = `
+        <h3>${form.userName.value} 您好，您的總分是：${totalScore} 分</h3>
+        <p>${feedback}</p>
+    `;
+
+    fetch('https://script.google.com/macros/s/AKfycbybgsX-1-GDGuIssR9gboJS3C4I1z_A5ijc-I1NSeiY5xng5lQa-xAn6NJh_7CP5z7Q/exec', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+            name: form.userName.value,
+            relation: form.relation.value,
+            age: form.age.value,
+            score: totalScore
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log("資料已成功儲存:", data);
+    })
+    .catch(err => {
+        console.error("資料儲存時發生錯誤:", err);
+    });
+}
+</script>
+
+</body>
+</html>
